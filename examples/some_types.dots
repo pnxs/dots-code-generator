@@ -1,0 +1,10 @@
+
+enum AnNiceEnum {
+    1: enumValue1,
+    2: enumValue2,
+}
+
+struct AnNiceStruct {
+    1: [key] string id;
+    2: AnNiceEnum enumField;
+}
