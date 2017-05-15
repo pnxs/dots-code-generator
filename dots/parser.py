@@ -2,31 +2,35 @@
 
 from simpleparse.parser import Parser
 from simpleparse.dispatchprocessor import *
+#import pprint
 
 ddlGrammar = r"""
-file            := ws, content
-content         := directive+, ws
-directive       := (comment / import_file / struct / enum), ws
-import_file     := 'import', ws, path
-struct          := 'struct', ws, name, ws, options?, '{', ws, comment*, ws, attribute*, '}', ws
-attribute       := tag, ":", ws, options?, (vector_type / type), ws, name, ws, ";", comment*, ws
-comment         := ws, '//', ws, comment_text
+file            := wsn, content
+content         := directive+, wsn
+directive       := !, (struct / enum / import_file / comment), wsn
+import_file     := 'import', !, wsn, path
+struct          := multiline_comment?, wsn, 'struct', !, wsn, name, wsn, options?, '{', wsn, attribute*, '}', wsn
+attribute       := multiline_comment?, ws, tag, ":", ws, options?, (vector_type / type), ws, name, ws, ";", comment?, wsn
+multiline_comment := comment+
+comment         := ws, '//', !, ws, comment_text, nl
 comment_text     := -'\n'*
 option          := name, ("=", option_value)?
-options         := "[", (option, ","?)+, "]", ws
+options         := "[", (option, ","?)+, "]", wsn
 option_value     := [A-Za-z0-9_]+
 
-enum            := 'enum', ws, name, ws, '{', ws, comment*, ws, enum_item*, '}', ws
-enum_item       := tag, ":", ws, name, (ws, '=', ws, value)?, ws, [,]?, comment*, ws
+enum            := multiline_comment?, 'enum', !, wsn, name, wsn, '{', wsn, enum_item*, '}', wsn
+enum_item       := multiline_comment?, ws, tag, ":", wsn, name, (wsn, '=', wsn, value)?, wsn, [,]?, comment*, wsn
 
 name            := identifier
 type            := identifier
-vector_type      := 'vector<', ws, vector_type_name, ws, '>'
+vector_type      := 'vector<', wsn, vector_type_name, wsn, '>'
 vector_type_name  := identifier
 tag             := [0-9]+
 value           := [-0-9]+
 path            := -'\n'*
-<ws>            := [ \t\n]*
+<wsn>           := [ \t\n]*
+<ws>            := [ \t]*
+<nl>            := '\n'
 <alpha>         := [A-Za-z]+
 <identifier>    := [a-zA-Z], [a-zA-Z0-9_]*
 """
@@ -81,6 +85,12 @@ class DDLProcessor(DispatchProcessor):
 
         for c in childs:
             cn = c[0]
+            if cn == "multiline_comment":
+                comment = dispatch(self, c, in_buffer)
+                if ("structComment" not in obj):
+                    obj["structComment"] = comment
+                else:
+                    obj["structComment"] += comment
             if cn == "attribute":
                 d = dispatch(self, c, in_buffer)
                 obj["attributes"].append(d)
@@ -91,9 +101,10 @@ class DDLProcessor(DispatchProcessor):
                 obj["name"] = dispatch(self, c, in_buffer)
             elif cn == "options":
                 obj["options"] = dispatch(self, c, in_buffer)
-            elif cn == "comment":
-                obj["structComment"] = dispatch(self, c, in_buffer)
 
+        #pp = pprint.PrettyPrinter(depth=4)
+        #print("Struct:")
+        #pp.pprint(obj)
         self.structs.append(obj)
 
         return obj
@@ -107,6 +118,10 @@ class DDLProcessor(DispatchProcessor):
                 obj["name"] = dispatch(self, c, in_buffer)
             elif cn == "enum_item":
                 obj["items"].append(dispatch(self, c, in_buffer))
+        
+        #pp = pprint.PrettyPrinter(depth=4)
+        #print("Enum:")
+        #pp.pprint(obj)
 
         self.enums.append(obj)
         return obj
@@ -175,6 +190,14 @@ class DDLProcessor(DispatchProcessor):
         for c in childs:
             if c[0] == "comment_text":
                 return dispatch(self, c, in_buffer)
+
+    def multiline_comment(self, tup, in_buffer):
+        tag, start, stop, childs = tup
+        comment_text = []
+        for c in childs:
+            if c[0] == "comment":
+                comment_text.append(dispatch(self, c, in_buffer))
+        return comment_text
 
     @staticmethod
     def comment_text(tup, in_buffer):

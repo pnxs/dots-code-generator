@@ -1,10 +1,22 @@
 
+// Multiline
+// Enum comment
 enum AnNiceEnum {
+    // Enum value before comment
     1: enumValue1,
-    2: enumValue2,
+    2: enumValue2 // Enum Value after comment
 }
 
+// Comment that does not belong to any item
+
+// Multiline
+// Struct
+// Comment
 struct AnNiceStruct {
+    // Attributte comment
+    // multiline
     1: [key] string id;
-    2: AnNiceEnum enumField;
+    2: AnNiceEnum enumField; // Attributte comment (behind)
+    // Before
+    3: int16 intField; // After
 }
