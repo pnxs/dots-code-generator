@@ -21,29 +21,23 @@ class DotsCodeGenerator:
     verbose              = False
     list_generated       = False
 
-    struct_templates     = ("struct.dots.h.dotsT", "struct.dots.cpp.dotsT", "struct2.dots2.cpp.dotsT")
-    enum_templates       = ("enum.dots.h.dotsT", "enum.dots.cpp.dotsT")
+    struct_templates     = []
+    enum_templates       = []
+    type_mapping         = {}
+    vector_format        = ""
 
-    # Default is C++ mapping
-    type_mapping         = {
-        "bool": "bool",
-        "int8": "int8_t",
-        "int16": "int16_t",
-        "int32": "int32_t",
-        "int64": "int64_t",
-        "uint8": "uint8_t",
-        "uint16": "uint16_t",
-        "uint32": "uint32_t",
-        "uint64": "uint64_t",
-        "float32": "float",
-        "float64": "double",
-        "float128": "long double",
-        "duration": "Duration",
-        "timepoint": "TimePoint",
-        "steady_timepoint": "SteadyTimePoint",
-        "string": "std::string",
-        "dots::property_set": "dots::property_set"
-    }
+
+    def loadConfig(self, configFile):
+        if dcg.verbose:
+            eprint("Load config from file %s" % configFile)
+        config = __import__(configFile)
+
+        if config:
+            self.struct_templates = config.struct_templates
+            self.enum_templates = config.enum_templates
+            self.type_mapping = config.type_mapping
+            self.vector_format = config.vector_format
+    
 
     def outputNames(self, name, templateList):
         outNames = {}
@@ -128,6 +122,8 @@ class DotsCodeGenerator:
         bn = os.path.basename(fileName)
 
         gen = DdlParser()
+        gen.ddlconfig["vector_format"] = self.vector_format
+        gen.ddlconfig["type_mapping"] = self.type_mapping
         s = gen.parse(fd.read())
 
         for enum in s["enums"]:
@@ -151,17 +147,22 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     dcg = DotsCodeGenerator()
+    configFile = None
     if os.environ.has_key("DOTS_TEMPLATE_PATH"):
         dcg.templatePath = os.environ["DOTS_TEMPLATE_PATH"]
     if os.environ.has_key("DCG_CONFIG_FILE"):
-        dcg.configFile = os.environ["DCG_CONFIG_FILE"]
+        configFile = os.environ["DCG_CONFIG_FILE"]
     if options.templatePath is not None:
         dcg.templatePath = options.templatePath
+    if options.configFile:
+        configFile = options.configFile
     if options.list_generated:
         dcg.list_generated = options.list_generated
     if options.verbose:
         dcg.verbose = True
     dcg.outputPath = options.outputPath
+
+    dcg.loadConfig(configFile)
 
     if dcg.verbose:
         eprint("Templatepath: '%s'" % options.templatePath)

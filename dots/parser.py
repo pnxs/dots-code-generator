@@ -31,12 +31,48 @@ path            := -'\n'*
 <identifier>    := [a-zA-Z], [a-zA-Z0-9_]*
 """
 
+type_mapping_1_1 = {
+    "bool": "bool",
+    "int8": "int8",
+    "int16": "int16",
+    "int32": "int32",
+    "int64": "int64",
+    "uint8": "uint8",
+    "uint16": "uint16",
+    "uint32": "uint32",
+    "uint64": "uint64",
+    "float32": "float32",
+    "float64": "float64",
+    "float128": "float128",
+    "duration": "duration",
+    "time_point": "time_point",
+    "steady_timepoint": "steady_timepoint",
+    "string": "string",
+    "property_set": "property_set"
+}
 
 class DDLProcessor(DispatchProcessor):
-    def __init__(self):
+    def __init__(self, config):
         self.imports = []
         self.structs = []
         self.enums = []
+        self.vectorFormat = config["vector_format"]
+        self.typeMapping = config["type_mapping"]
+
+    def mappedType(self, attr):
+        outputFormat = "%s"
+        tn = attr["type"]
+        if attr["vector"]:
+            outputFormat = self.vectorFormat
+            tn = attr["vector_type"]
+
+        # Imported names will not be changed
+        if tn in self.imports:
+            return outputFormat % tn
+
+        if tn not in self.typeMapping:
+            raise Exception("Unknown type: '%s'" % tn)
+        return outputFormat % self.typeMapping[tn]
 
     def struct(self, tup, in_buffer):
         tag, start, stop, childs = tup
@@ -153,10 +189,10 @@ class DDLProcessor(DispatchProcessor):
             attr["key"] = attr["options"]["key"]
 
         if "vector_type" in attr:
-            attr["type"] = "dots::Vector<" + attr["vector_type"] + ">"
+            attr["type"] = "vector<%s>" % attr["vector_type"]
             attr["vector"] = True
 
-        attr["cxx_type"] = attr["type"]
+        attr["cxx_type"] = self.mappedType(attr)
         attr["Name"] = attr["name"][0].upper() + attr["name"][1:]
 
         return attr
@@ -181,9 +217,13 @@ class DDLProcessor(DispatchProcessor):
 class DdlParser(object):
     def __init__(self):
         self.scanner = Parser(ddlGrammar, 'file')
+        self.ddlconfig = {
+            "vector_format": "dots::Vector<%s>",
+            "type_mapping": type_mapping_1_1
+        }
 
     def parse(self, data):
-        success, structs, next_char = self.scanner.parse(data, processor=DDLProcessor())
+        success, structs, next_char = self.scanner.parse(data, processor=DDLProcessor(self.ddlconfig))
         if not success:
             raise Exception("Parsing error")
         return structs[0]

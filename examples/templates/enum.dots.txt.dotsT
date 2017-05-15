@@ -1,0 +1,8 @@
+This is an generated text documentation of DOTS types
+
+Enum-Typename: {{name}}
+
+Values:
+{%- for elem in items %}
+{{elem.name}} = {{elem.value}} // {{elem.comment}}
+{%- endfor %}
