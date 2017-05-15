@@ -84,13 +84,22 @@ class DotsCodeGenerator:
         fs = struct
         fs["includes"] = []
         
+        # Build list of self defined struct types
         structTypes = []
         for attr in struct["attributes"]:
+            t = None
             if attr["vector"]:
-                structTypes.append(attr["vector_type"])
+                t = attr["vector_type"]
             else:
-                structTypes.append(attr["type"])
+                t = attr["type"]
+
+            if t not in self.type_mapping:
+                structTypes.append(t)
+
+        # Filter any imports, that are not needed by this struct
         needToImport = set(s["imports"]) & set(structTypes)
+        # Add missing imports for struct
+        needToImport = needToImport | set(structTypes)
         fs["imports"] = list(needToImport)
 
         outputNames = self.outputNames(struct["name"], self.struct_templates)

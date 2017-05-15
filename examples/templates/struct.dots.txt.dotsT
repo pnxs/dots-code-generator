@@ -4,6 +4,16 @@ Typename: {{name}}
 
 Fields:
 {%- for attr in attributes %}
-{{attr.name}}
+{{attr.cxx_type}} {{attr.name}}
+{%- endfor %}
+
+Includes:
+{%- for inc in includes %}
+* {{inc}}
+{%- endfor %}
+
+Imports:
+{%- for imp in imports %}
+* {{imp}}
 {%- endfor %}
 

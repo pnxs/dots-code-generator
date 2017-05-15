@@ -71,7 +71,8 @@ class DDLProcessor(DispatchProcessor):
             return outputFormat % tn
 
         if tn not in self.typeMapping:
-            raise Exception("Unknown type: '%s'" % tn)
+            return outputFormat % tn
+            #raise Exception("Unknown type: '%s'" % tn)
         return outputFormat % self.typeMapping[tn]
 
     def struct(self, tup, in_buffer):
