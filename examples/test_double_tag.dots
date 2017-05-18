@@ -1,0 +1,15 @@
+
+//
+
+// Multiline
+// Struct
+// Comment
+struct AnNiceStruct {
+    // Attributte comment
+    // multiline
+    1: [key] string id;
+    2: AnNiceEnum enumField; // Attributte comment (behind)
+    // Before
+    1: int16 intField; // After
+    4: [removed] string obsoleteField;
+}
