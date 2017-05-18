@@ -14,6 +14,22 @@ import sys
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+class ParsingError(Exception):
+    """Base class for parsing errors"""
+    pass
+
+class NonUniqueTagError(ParsingError):
+    """Exception raised when a struct has non-unique tags"""
+    
+    def __init__(self, typeName, tagId, propertyName, previousPropertyName):
+        self.typeName = typeName
+        self.tag = tagId
+        self.propertyName = propertyName
+        self.previousPropertyName = previousPropertyName
+
+    def __str__(self):
+        return "ERROR in Type %s: Tag '%d' from property '%s' was previously used in property '%s'." % (self.typeName, self.tag, self.propertyName, self.previousPropertyName)
+
 class DotsCodeGenerator:
     configFile           = None
     templatePath         = "."
@@ -120,6 +136,21 @@ class DotsCodeGenerator:
             jinja = DdlTemplate(self.templatePath,  self.outputPath + "/" + fileName)
             jinja.render(key, fs)
 
+    def check_struct_unique_tags(self, struct):
+        seen_properties = {}
+        for attr in struct["attributes"]:
+            tag = attr["tag"]
+            if tag in seen_properties:
+                raise NonUniqueTagError(attr["name"], tag, attr["name"], seen_properties[tag]["name"])
+                print("ERROR in Type %s: Tag '%d' from property '%s' was previously used in property '%s'." % 
+                        (attr["name"], tag, attr["name"], seen_properties[tag]["name"]))
+            seen_properties[tag] = attr
+
+    def check_consistency_enum(self, enums):
+        pass
+
+    def check_consistency_struct(self, struct):
+        self.check_struct_unique_tags(struct)
 
     def processFile(self, fileName):
         if self.verbose:
@@ -136,9 +167,11 @@ class DotsCodeGenerator:
         s = gen.parse(fd.read())
 
         for enum in s["enums"]:
+            self.check_consistency_enum(enum)
             self.generateEnum(enum, s)
 
         for struct in s["structs"]:
+            self.check_consistency_struct(struct)
             self.generateStruct(struct, s)
 
     
@@ -177,6 +210,12 @@ if __name__ == "__main__":
         eprint("Templatepath: '%s'" % options.templatePath)
         eprint("Output generated:", options.list_generated)
 
-    for file in args:
-        dcg.processFile(file)
+    try:
+        for file in args:
+            dcg.processFile(file)
 
+    except NonUniqueTagError as e:
+        print(e)
+        sys.exit(1)
+    
+        
