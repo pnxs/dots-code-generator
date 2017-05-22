@@ -21,6 +21,9 @@ class DdlTemplate:
         self.env = Environment(loader=FileSystemLoader(template_directory),
                                extensions=[])
         self.env.filters["expand_list"] = expand_list
+        self.env.lstrip_blocks = True
+        self.env.trim_blocks =  True
+        self.env.keep_trailing_newline = True
         if output_file is "-":
             self.output_file = sys.stdout
         else:

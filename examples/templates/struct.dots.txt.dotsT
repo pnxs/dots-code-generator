@@ -3,17 +3,16 @@ This is an generated text documentation of DOTS types
 Typename: {{name}}
 
 Fields:
-{%- for attr in attributes %}
+{% for attr in attributes %}
 {{attr.cxx_type}} {{attr.name}}
-{%- endfor %}
+{% endfor %}
 
 Includes:
-{%- for inc in includes %}
+{% for inc in includes %}
 * {{inc}}
-{%- endfor %}
+{% endfor %}
 
 Imports:
-{%- for imp in imports %}
+{% for imp in imports %}
 * {{imp}}
-{%- endfor %}
-
+{% endfor %}
