@@ -118,6 +118,7 @@ class DDLProcessor(DispatchProcessor):
                 obj["name"] = dispatch(self, c, in_buffer)
             elif cn == "enum_item":
                 obj["items"].append(dispatch(self, c, in_buffer))
+        obj["Name"] = obj["name"][0].upper() + obj["name"][1:]
         
         #pp = pprint.PrettyPrinter(depth=4)
         #print("Enum:")
@@ -132,6 +133,7 @@ class DDLProcessor(DispatchProcessor):
 
         if "value" not in attr:
             attr["value"] = attr["tag"] - 1
+        attr["Name"] = attr["name"][0].upper() + attr["name"][1:]
         return attr
 
     def import_file(self, tup, in_buffer):
