@@ -36,6 +36,7 @@ class DotsCodeGenerator:
     outputPath           = "."
     verbose              = False
     list_generated       = False
+    defines              = {}
 
     struct_templates     = []
     enum_templates       = []
@@ -77,6 +78,7 @@ class DotsCodeGenerator:
         fs = enum
         fs["imports"] = s["imports"]
         fs["includes"] = []
+        fs["defines"] = self.defines
 
         outputNames = self.outputNames(enum["name"], self.enum_templates)
 
@@ -99,6 +101,7 @@ class DotsCodeGenerator:
     def generateStruct(self, struct, s):
         fs = struct
         fs["includes"] = []
+        fs["defines"] = self.defines
         
         # Build list of self defined struct types
         structTypes = []
@@ -179,6 +182,7 @@ if __name__ == "__main__":
     usage = "usage: %prog [options] dots-files"
     parser = OptionParser(usage=usage)
     parser.add_option("-C", "--config", dest="configFile")
+    parser.add_option("-D", "--define", dest="define", action="append")
     parser.add_option("-T", "--templatePath", dest="templatePath",
                     help="path to directory with template-files")
     parser.add_option("-o", "--outputPath", dest="outputPath", default=".",
@@ -202,6 +206,12 @@ if __name__ == "__main__":
         dcg.list_generated = options.list_generated
     if options.verbose:
         dcg.verbose = True
+    if options.define:
+        defines = {}
+        for define in options.define:
+            define, value = define.split("=", 1)
+            defines[define] = value
+        dcg.defines = defines
     dcg.outputPath = options.outputPath
 
     dcg.loadConfig(configFile)
