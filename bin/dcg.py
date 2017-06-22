@@ -14,6 +14,15 @@ import sys
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+def str2bool(string):
+    string = string.lower()
+    if string == "true":
+        return True
+    elif string == "false":
+        return False
+    else:
+        raise Exception("error converting '%s' to boolean" % string)
+
 class ParsingError(Exception):
     """Base class for parsing errors"""
     pass
@@ -30,6 +39,7 @@ class NonUniqueTagError(ParsingError):
     def __str__(self):
         return "ERROR in Type %s: Tag '%d' from property '%s' was previously used in property '%s'." % (self.typeName, self.tag, self.propertyName, self.previousPropertyName)
 
+
 class DotsCodeGenerator:
     configFile           = None
     templatePath         = "."
@@ -43,6 +53,14 @@ class DotsCodeGenerator:
     type_mapping         = {}
     vector_format        = ""
 
+    default_options      = {
+        "cached": True,
+        "cleanup": False,
+        "persistent": False,
+        "internal": False,
+        "local": False,
+        "substruct_only": False
+    }
 
     def loadConfig(self, configFile):
         if dcg.verbose:
@@ -74,6 +92,23 @@ class DotsCodeGenerator:
             on = outputNames[key]
             print(on)
 
+    def processOptions(self, options):
+        default_options = self.default_options.copy()
+        for option in options:
+            option_value = options[option]
+
+            if option == "cached":
+                if not type(option_value) is bool:
+                    options[option] = str2bool(option_value)
+
+            # Remove from default_options-dict when option was set
+            if option in default_options:
+                del default_options[option]
+
+        # Set all default_options, that were not set before
+        for option in default_options:
+            options[option] = default_options[option]
+
     def generateEnum(self, enum, s):
         fs = enum
         fs["imports"] = s["imports"]
@@ -102,6 +137,9 @@ class DotsCodeGenerator:
         fs = struct
         fs["includes"] = []
         fs["defines"] = self.defines
+
+        self.processOptions(fs["options"])
+
         
         # Build list of self defined struct types
         structTypes = []
