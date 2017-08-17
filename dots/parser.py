@@ -64,7 +64,7 @@ class DDLProcessor(DispatchProcessor):
         self.typeMapping = config["type_mapping"]
 
     def mappedType(self, attr):
-        outputFormat = "%s"
+        outputFormat = "{}"
         tn = attr["type"]
         if attr["vector"]:
             outputFormat = self.vectorFormat
@@ -75,9 +75,9 @@ class DDLProcessor(DispatchProcessor):
             return outputFormat % tn
 
         if tn not in self.typeMapping:
-            return outputFormat % tn
+            return outputFormat.format(tn)
             #raise Exception("Unknown type: '%s'" % tn)
-        return outputFormat % self.typeMapping[tn]
+        return outputFormat.format(self.typeMapping[tn])
 
     def struct(self, tup, in_buffer):
         tag, start, stop, childs = tup
