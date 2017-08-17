@@ -2,6 +2,7 @@
 
 from simpleparse.parser import Parser
 from simpleparse.dispatchprocessor import *
+import copy
 #import pprint
 
 ddlGrammar = r"""
@@ -217,6 +218,10 @@ class DDLProcessor(DispatchProcessor):
         if "vector_type" in attr:
             attr["type"] = "vector<%s>" % attr["vector_type"]
             attr["vector"] = True
+            vectorAttr = copy.copy(attr)
+            vectorAttr["vector"] = False
+            vectorAttr["type"] = vectorAttr["vector_type"]
+            attr["cxx_vector_type"] = self.mappedType(vectorAttr)
 
         attr["cxx_type"] = self.mappedType(attr)
         attr["Name"] = attr["name"][0].upper() + attr["name"][1:]
