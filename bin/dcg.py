@@ -10,6 +10,10 @@ from dots import DdlParser, DdlTemplate
 import os
 
 import sys
+import filecmp
+import functools
+import itertools
+import operator
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -109,6 +113,33 @@ class DotsCodeGenerator:
         for option in default_options:
             options[option] = default_options[option]
 
+    def isFileEqual(self, left, right):
+        try:
+
+            ret = filecmp.cmp(left, right, shallow=True)
+            eprint("Check ", left, right, ret)
+            return ret
+        except:
+            eprint("Exception")
+            return False
+
+    def generateFile(self, fileName, key, fs):
+        absFileName = self.outputPath + "/" + fileName
+        absTempFileName = absFileName + ".tmp"
+
+        if self.verbose:
+            eprint("    gen " + fileName)
+        jinja = DdlTemplate(self.templatePath, absTempFileName)
+        jinja.render(key, fs)
+
+        # Check if tempFileName is different to fileName, only overwrite if different
+        if not self.isFileEqual(absTempFileName, absFileName):
+            eprint("Tmpfile %s, file %s" % (absTempFileName, absFileName))
+            os.rename(absTempFileName, absFileName)
+        else:
+            os.remove(absTempFileName)
+
+
     def generateEnum(self, enum, s):
         fs = enum
         fs["imports"] = s["imports"]
@@ -125,13 +156,7 @@ class DotsCodeGenerator:
             eprint("  Enum %s" % enum["name"])
         
         for key in outputNames:
-            on = outputNames[key]
-            
-            fileName = on
-            if self.verbose:
-                eprint("    gen " + fileName)
-            jinja = DdlTemplate(self.templatePath,  self.outputPath + "/" + fileName)
-            jinja.render(key, fs)
+            self.generateFile(outputNames[key], key, fs)
     
     def generateStruct(self, struct, s):
         fs = struct
@@ -167,15 +192,10 @@ class DotsCodeGenerator:
     
         if self.verbose:
             eprint("  Struct %s" % struct["name"])
-        
+
         for key in outputNames:
-            on = outputNames[key]
-            
-            fileName = on
-            if self.verbose:
-                eprint("    gen " + fileName)
-            jinja = DdlTemplate(self.templatePath,  self.outputPath + "/" + fileName)
-            jinja.render(key, fs)
+            self.generateFile(outputNames[key], key, fs)
+
 
     def check_struct_unique_tags(self, struct):
         seen_properties = {}
