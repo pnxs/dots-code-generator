@@ -115,11 +115,11 @@ class DotsCodeGenerator:
 
     def isFileEqual(self, left, right):
         try:
-
-            ret = filecmp.cmp(left, right, shallow=True)
+            ret = filecmp.cmp(left, right, shallow=False)
             eprint("Check ", left, right, ret)
             return ret
-        except:
+        except Exception as e:
+            print(e)
             eprint("Exception")
             return False
 
@@ -134,7 +134,6 @@ class DotsCodeGenerator:
 
         # Check if tempFileName is different to fileName, only overwrite if different
         if not self.isFileEqual(absTempFileName, absFileName):
-            eprint("Tmpfile %s, file %s" % (absTempFileName, absFileName))
             os.rename(absTempFileName, absFileName)
         else:
             os.remove(absTempFileName)
