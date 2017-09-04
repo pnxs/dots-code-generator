@@ -45,3 +45,4 @@ class DdlTemplate:
     def render(self, template_file, variables):
         t = self.env.get_template(template_file)
         self.output_file.write(t.render(variables))
+        self.output_file.close()
