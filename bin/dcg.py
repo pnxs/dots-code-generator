@@ -116,11 +116,10 @@ class DotsCodeGenerator:
     def isFileEqual(self, left, right):
         try:
             ret = filecmp.cmp(left, right, shallow=False)
-            eprint("Check ", left, right, ret)
+            #eprint("Check ", left, right, ret)
             return ret
         except Exception as e:
-            print(e)
-            eprint("Exception")
+            eprint("Exception:", e)
             return False
 
     def generateFile(self, fileName, key, fs):
