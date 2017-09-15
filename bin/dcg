@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+from dots.code_generator import DotsCodeGenerator
+import dots.outputs
+
+"""
+DOTS code generator
+
+Normal operation: Read DOTS-files and generate output-files (source-code) from language-specific templates.
+* Can generate one or more output-files per DOTS type (enum or struct)
+* Can generate one output-file, from all read DOTS type (and files)
+
+"""
+
+
+parser = argparse.ArgumentParser(description="DOTS code generator")
+parser.add_argument('dots_files', metavar='DOTS_FILES', type=str, nargs='+',
+                    help="Input files")
+parser.add_argument('--sum', dest='accumulate', action='store_const',
+                    const=sum, default=max,
+                    help='sum the integers (default: find the max)')
+
+parser.add_argument('--config', metavar='FILE', dest='config', help="Output configuration")
+
+parser.add_argument("-M", "--list-generated", dest="list_generated", action="store_true", default=False,
+                   help="list generated output files")
+
+
+args = parser.parse_args()
+# print(args.accumulate(args.blah))
+
+numeric_level = getattr(logging, "INFO", None)
+
+logging.basicConfig(level=numeric_level)
+
+dcg = DotsCodeGenerator()
+
+print(args.dots_files)
+
+dcg.read_input_files(args.dots_files)
+user_types = dcg.type_registry.get_user_types()
+print("All known user-types")
+for t in user_types:
+    print("  " + t)
+
+print()
+print("Unresolved types")
+print(dcg.type_registry.get_unresolved_types())
+
+
+output = dots.outputs.Descripor(user_types, "out3")
+output.generate()
+
+
+# usage = "usage: %prog [options] dots-files"
+# parser = OptionParser(usage=usage)
+# parser.add_option("-C", "--config", dest="configFile")
+# parser.add_option("-D", "--define", dest="define", action="append")
+# parser.add_option("-T", "--templatePath", dest="templatePath",
+#                   help="path to directory with template-files")
+# parser.add_option("-o", "--outputPath", dest="outputPath", default=".",
+#                   help="path of output files")
+# parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
+# parser.add_option("-M", "--list-generated", dest="list_generated", action="store_true", default=False,
+#                   help="list generated output files")
