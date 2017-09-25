@@ -4,6 +4,7 @@ import argparse
 import logging
 from dots.code_generator import DotsCodeGenerator
 import dots.outputs
+import sys
 
 """
 DOTS code generator
@@ -22,11 +23,27 @@ parser.add_argument('--sum', dest='accumulate', action='store_const',
                     const=sum, default=max,
                     help='sum the integers (default: find the max)')
 
-parser.add_argument('--config', metavar='FILE', dest='config', help="Output configuration")
+parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+parser.add_argument("-V", "--version", action="store_true", help="Display version")
 
+parser.add_argument("-D", "--define", type=str, help="Add definition for generator")
+
+parser.add_argument('--config', metavar='FILE', dest='config', help="Output configuration")
+parser.add_argument("-o", "--output-path", dest="output_path", default=".",
+                    help="Path of generated files")
 parser.add_argument("-M", "--list-generated", dest="list_generated", action="store_true", default=False,
                    help="list generated output files")
+parser.add_argument("-C", "--write-changed-only", default=False, action="store_true",
+                    help="Only write generated files, when the content has changed compared to an existing file")
+parser.add_argument("-O", "--output", metavar='OUTPUT', type=str,
+                    help="Choose output generator")
+parser.add_argument("--list-outputs", action="store_true", help="List available output generators")
 
+# Display output-generator specific options
+
+parser.add_argument("-S", "--single-output", action="store_true",
+                    help="combine files into a single output file (is supported by generator)")
+parser.add_argument("-T", "--template-path", metavar="DIR", help="Path to directory with template-files")
 
 args = parser.parse_args()
 # print(args.accumulate(args.blah))
@@ -37,7 +54,13 @@ logging.basicConfig(level=numeric_level)
 
 dcg = DotsCodeGenerator()
 
-print(args.dots_files)
+if args.list_outputs:
+    outputs = dots.outputs.list_outputs()
+    for output in outputs:
+        print(output)
+    sys.exit(0)
+
+print("Process DOTS-files:", args.dots_files)
 
 dcg.read_input_files(args.dots_files)
 user_types = dcg.type_registry.get_user_types()
@@ -45,23 +68,16 @@ print("All known user-types")
 for t in user_types:
     print("  " + t)
 
+output = dots.outputs.Descripor(user_types, args.output_path)
+
+if args.list_generated:
+    files = output.list_generated_files()
+    for file in files:
+        print(file)
+    sys.exit(0)
+
 print()
 print("Unresolved types")
 print(dcg.type_registry.get_unresolved_types())
 
-
-output = dots.outputs.Descripor(user_types, "out3")
 output.generate()
-
-
-# usage = "usage: %prog [options] dots-files"
-# parser = OptionParser(usage=usage)
-# parser.add_option("-C", "--config", dest="configFile")
-# parser.add_option("-D", "--define", dest="define", action="append")
-# parser.add_option("-T", "--templatePath", dest="templatePath",
-#                   help="path to directory with template-files")
-# parser.add_option("-o", "--outputPath", dest="outputPath", default=".",
-#                   help="path of output files")
-# parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
-# parser.add_option("-M", "--list-generated", dest="list_generated", action="store_true", default=False,
-#                   help="list generated output files")

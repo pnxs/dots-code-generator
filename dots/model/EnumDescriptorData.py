@@ -1,6 +1,3 @@
-from typing import List
-from datetime import datetime
-
 from dots.model.EnumElementDescriptor import EnumElementDescriptor
 
 class EnumDescriptorData:

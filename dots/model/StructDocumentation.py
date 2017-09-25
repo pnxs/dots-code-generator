@@ -1,6 +1,3 @@
-from typing import List
-from datetime import datetime
-
 
 class StructDocumentation:
     __dots_object__ = True

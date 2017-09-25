@@ -1,6 +1,3 @@
-from typing import List
-from datetime import datetime
-
 from dots.model.DotsStructFlags import DotsStructFlags
 from dots.model.StructDocumentation import StructDocumentation
 from dots.model.StructPropertyData import StructPropertyData

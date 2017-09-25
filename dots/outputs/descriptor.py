@@ -12,15 +12,26 @@ class Descripor(Output):
         self.types = types
         self.target_path = target_path
 
+    def list_generated_files(self):
+        files = []
+        for t in self.types:
+            descriptor = self.types[t]
+            files.append(self.getTargetFilename(descriptor))
+
+        return files
+
     def generate(self):
         for t in self.types:
             dots_type = self.types[t]
             self.store_descriptor(dots_type)
 
+    def getTargetFilename(self, descriptor):
+        return self.target_path + "/" + descriptor.name + ".doi"
+
     def store_descriptor(self, descriptor):
         dh = DotsHeader()
 
-        file_name = self.target_path + "/" + descriptor.name + ".doi"
+        file_name = self.getTargetFilename(descriptor)
 
         if isinstance(descriptor, StructDescriptorData):
             dh.typeName = "StructDescriptorData"
