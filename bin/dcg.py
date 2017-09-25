@@ -113,8 +113,19 @@ class DotsCodeGenerator:
         for option in default_options:
             options[option] = default_options[option]
 
+    def isExisting(self, fileName):
+        try:
+            ret = os.stat(fileName)
+            return True
+        except:
+            return False
+
     def isFileEqual(self, left, right):
         try:
+            if not self.isExisting(left):
+                return False
+            if not self.isExisting(right):
+                return False
             ret = filecmp.cmp(left, right, shallow=False)
             #eprint("Check ", left, right, ret)
             return ret

@@ -7,3 +7,4 @@ class TestDotsCodeGenerator(TestCase):
         dcg.verbose = True
         self.assertTrue(dcg.isFileEqual("./tests/cmp_test_1", "./tests/cmp_test_equal_to_1"))
         self.assertFalse(dcg.isFileEqual("./tests/cmp_test_1", "./tests/cmp_test_2"))
+        self.assertFalse(dcg.isFileEqual("./tests/non-existing", "./tests/cmp_test_2"))
