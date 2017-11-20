@@ -28,7 +28,7 @@ class Descripor(Output):
     def getTargetFilename(self, descriptor):
         return self.target_path + "/" + descriptor.name + ".doi"
 
-    def store_descriptor(self, descriptor):
+     def store_descriptor(self, descriptor):
         dh = DotsHeader()
 
         file_name = self.getTargetFilename(descriptor)

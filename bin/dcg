@@ -17,7 +17,7 @@ Normal operation: Read DOTS-files and generate output-files (source-code) from l
 
 
 parser = argparse.ArgumentParser(description="DOTS code generator")
-parser.add_argument('dots_files', metavar='DOTS_FILES', type=str, nargs='+',
+parser.add_argument('dots_files', metavar='DOTS_FILES', type=str, nargs='*',
                     help="Input files")
 parser.add_argument('--sum', dest='accumulate', action='store_const',
                     const=sum, default=max,
@@ -35,7 +35,7 @@ parser.add_argument("-M", "--list-generated", dest="list_generated", action="sto
                    help="list generated output files")
 parser.add_argument("-C", "--write-changed-only", default=False, action="store_true",
                     help="Only write generated files, when the content has changed compared to an existing file")
-parser.add_argument("-O", "--output", metavar='OUTPUT', type=str,
+parser.add_argument("-O", "--output", metavar='OUTPUT', type=str, default="template",
                     help="Choose output generator")
 parser.add_argument("--list-outputs", action="store_true", help="List available output generators")
 
@@ -68,7 +68,12 @@ print("All known user-types")
 for t in user_types:
     print("  " + t)
 
-output = dots.outputs.Descripor(user_types, args.output_path)
+if args.output == "desciptor":
+    output = dots.outputs.Descripor(user_types, args.output_path)
+elif args.output == "template":
+    output = dots.outputs.Template(user_types, args.output_path)
+else:
+    logging.ERROR("unknown output '%s'" % args.output)
 
 if args.list_generated:
     files = output.list_generated_files()

@@ -1,5 +1,6 @@
 
 from dots.outputs.descriptor import Descripor
+from dots.outputs.template import Template
 #from dots.outputs.template import
 
 def list_outputs():
