@@ -2,7 +2,7 @@ from dots import DdlParser
 from dots.model import StructDescriptorData, \
     StructPropertyData, EnumDescriptorData,\
     EnumElementDescriptor, DotsStructScope, \
-    DotsStructFlags
+    DotsStructFlags, StructDocumentation
 import logging
 
 
@@ -138,6 +138,8 @@ class DotsCodeGenerator:
             sp.tag = property["tag"]
             sp.type = property["type"]
             sp.isKey = property["key"]
+            if "comment" in property:
+                sp.comment = property["comment"]
 
             sd.properties.append(sp)
 
@@ -166,6 +168,14 @@ class DotsCodeGenerator:
         if "substruct_only" in opt:
             sd.flags.substructOnly = opt["substruct_only"]
 
+        print("Codegen: ", struct)
+
+        if len(struct["structComment"]) > 0:
+            doc = StructDocumentation()
+            doc.comment = struct["structComment"]
+
+            sd.documentation = doc
+
         return sd
 
     def read_input_file(self, file):
@@ -175,12 +185,15 @@ class DotsCodeGenerator:
         gen = DdlParser()
         s = gen.parse(fd.read())
 
+        #print(s)
+
         for enum in s["enums"]:
             self.check_consistency_enum(enum)
             desc = self.createEnumDescriptor(enum)
             self.type_registry.add_type(desc)
 
         for struct in s["structs"]:
+            #print("Struct:", struct)
             self.check_consistency_struct(struct)
             desc = self.createStructDescriptor(struct)
             self.type_registry.add_type(desc)

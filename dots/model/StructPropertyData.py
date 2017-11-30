@@ -7,6 +7,7 @@ class StructPropertyData:
         3: {"key": False, "dots_type": "bool", "name": "isKey", "class": bool},
         4: {"key": False, "dots_type": "string", "name": "type", "class": str},
         5: {"key": False, "dots_type": "uint32", "name": "typeId", "class": int},
+        99: {"key": False, "dots_type": "string", "name": "comment", "class": str},
     }
 
     _dots_options = {
@@ -24,3 +25,4 @@ class StructPropertyData:
         self.isKey = None  # type: bool
         self.type = None  # type: str
         self.typeId = None  # type: int
+        self.comment = None  # type: str

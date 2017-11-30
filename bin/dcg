@@ -5,6 +5,7 @@ import logging
 from dots.code_generator import DotsCodeGenerator
 import dots.outputs
 import sys
+import os
 
 """
 DOTS code generator
@@ -43,7 +44,7 @@ parser.add_argument("--list-outputs", action="store_true", help="List available 
 
 parser.add_argument("-S", "--single-output", action="store_true",
                     help="combine files into a single output file (is supported by generator)")
-parser.add_argument("-T", "--template-path", metavar="DIR", help="Path to directory with template-files")
+parser.add_argument("-T", "--template-path", metavar="DIR", dest="template_path", help="Path to directory with template-files")
 
 args = parser.parse_args()
 # print(args.accumulate(args.blah))
@@ -71,7 +72,19 @@ for t in user_types:
 if args.output == "desciptor":
     output = dots.outputs.Descripor(user_types, args.output_path)
 elif args.output == "template":
+    configFile = None
+    if "DOTS_TEMPLATE_PATH" in os.environ:
+        dcg.templatePath = os.environ["DOTS_TEMPLATE_PATH"]
+    if "DCG_CONFIG_FILE" in os.environ:
+        configFile = os.environ["DCG_CONFIG_FILE"]
+
+    if args.config:
+        configFile = args.config
     output = dots.outputs.Template(user_types, args.output_path)
+    output.loadConfig(configFile)
+
+    if args.template_path is not None:
+        output.templatePath = args.template_path
 else:
     logging.ERROR("unknown output '%s'" % args.output)
 

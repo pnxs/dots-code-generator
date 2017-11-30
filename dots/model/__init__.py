@@ -1,5 +1,6 @@
 from dots.model.StructDescriptorData import StructDescriptorData
 from dots.model.StructPropertyData import StructPropertyData
+from dots.model.StructDocumentation import StructDocumentation
 from dots.model.EnumElementDescriptor import EnumElementDescriptor
 from dots.model.EnumDescriptorData import EnumDescriptorData
 from dots.model.DotsStructFlags import DotsStructFlags

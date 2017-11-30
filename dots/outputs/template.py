@@ -1,5 +1,23 @@
 
 from dots.outputs.output import Output
+from dots.model import StructDescriptorData, EnumDescriptorData
+from dots import DdlTemplate
+import sys
+import filecmp
+import os
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def str2bool(string):
+    string = string.lower()
+    if string == "true":
+        return True
+    elif string == "false":
+        return False
+    else:
+        raise Exception("error converting '%s' to boolean" % string)
 
 class Template(Output):
     configFile           = None
@@ -27,6 +45,9 @@ class Template(Output):
         Output.__init__(self)
         self.types = types
         self.target_path = target_path
+        self.verbose = True
+
+        self.outputPath = self.target_path
 
     def list_generated_files(self):
         files = []
@@ -52,7 +73,7 @@ class Template(Output):
         return outNames
 
     def loadConfig(self, configFile):
-        if dcg.verbose:
+        if self.verbose:
             eprint("Load config from file %s" % configFile)
         config = __import__(configFile)
 
@@ -69,14 +90,15 @@ class Template(Output):
 
     def generate(self):
         for t in self.types:
-            dots_type = self.types[t]
-            for enum in s["enums"]:
-                self.check_consistency_enum(enum)
-                self.generateEnum(enum, s)
+            descriptor = self.types[t]
 
-            for struct in s["structs"]:
-                self.check_consistency_struct(struct)
-                self.generateStruct(struct, s)
+            if isinstance(descriptor, StructDescriptorData):
+                self.generateStruct(descriptor)
+            elif isinstance(descriptor, EnumDescriptorData):
+                pass
+                #self.generateEnum(descriptor)
+            else:
+                raise Exception("unkown type of descriptor: " + descriptor.__class__)
 
     def generateFile(self, fileName, key, fs):
         absFileName = self.outputPath + "/" + fileName
@@ -93,34 +115,90 @@ class Template(Output):
         else:
             os.remove(absTempFileName)
 
-    def generateEnum(self, enum, s):
-        fs = enum
-        fs["imports"] = s["imports"]
+    def generateEnum(self, descriptor):
+
+        fs = {}
+        #fs["imports"] = s["imports"]
         fs["includes"] = []
         fs["defines"] = self.defines
 
-        outputNames = self.outputNames(enum["name"], self.enum_templates)
+        outputNames = self.outputNames(fs["name"], self.enum_templates)
 
         if self.list_generated:
             self.printOutputNames(outputNames)
             return
 
         if self.verbose:
-            eprint("  Enum %s" % enum["name"])
+            eprint("  Enum %s" % fs["name"])
 
         for key in outputNames:
             self.generateFile(outputNames[key], key, fs)
 
-    def generateStruct(self, struct, s):
-        fs = struct
+    def descriptorToMap(self, descriptor):
+        fs = {}
+        fs["options"] = {
+            "cached": descriptor.flags.cached,
+            "cleanup": descriptor.flags.cleanup,
+            "internal": descriptor.flags.internal,
+            "local": descriptor.flags.local,
+            "persistent": descriptor.flags.persistent,
+            "substructOnly": descriptor.flags.substructOnly
+        }
+
+        fs["keys"] = []
+        fs["attributes"] = []
+        fs["keyAttributes"] = []
+
+        for property in descriptor.properties:
+            cxx_type = property.type
+            if property.type in self.type_mapping:
+                cxx_type = self.type_mapping[property.type]
+
+            isVector = property.type.startswith("vector<")
+
+            attr = {
+                "type": property.type,
+                "multiline_comment": "",
+                "tag": property.tag,
+                "name": property.name,
+                "options": {},
+                "Name": property.name[0].upper() + property.name[1:],
+                "key": property.isKey,
+                "vector": isVector,
+                "cxx_type": cxx_type
+            }
+
+            if property.comment:
+                attr["comment"] = property.comment
+
+
+            if attr["key"]:
+                fs["keys"].append(attr["name"])
+                fs["keyAttributes"].append(attr)
+
+            fs["attributes"].append(attr)
+
+        fs["name"] = descriptor.name
+        fs["structComment"] = descriptor.documentation.comment
+
+
+        return fs
+
+    def generateStruct(self, descriptor):
+        fs = self.descriptorToMap(descriptor)
         fs["includes"] = []
         fs["defines"] = self.defines
+        fs["imports"] = []
+
+        print("Fs: ", fs)
 
         self.processOptions(fs["options"])
 
+        print("generate struct", descriptor.name)
+
         # Build list of self defined struct types
         structTypes = []
-        for attr in struct["attributes"]:
+        for attr in fs["attributes"]:
             t = None
             if attr["vector"]:
                 t = attr["vector_type"]
@@ -131,22 +209,61 @@ class Template(Output):
                 structTypes.append(t)
 
         # Filter any imports, that are not needed by this struct
-        needToImport = set(s["imports"]) & set(structTypes)
+        needToImport = set(fs["imports"]) & set(structTypes)
         # Add missing imports for struct
         needToImport = needToImport | set(structTypes)
         fs["imports"] = list(needToImport)
 
-        outputNames = self.outputNames(struct["name"], self.struct_templates)
+        outputNames = self.outputNames(fs["name"], self.struct_templates)
+
+        print("Outputnames:", outputNames)
 
         if self.list_generated:
             self.printOutputNames(outputNames)
             return
 
         if self.verbose:
-            eprint("  Struct %s" % struct["name"])
+            eprint("  Struct %s" % fs["name"])
 
         for key in outputNames:
             self.generateFile(outputNames[key], key, fs)
 
     def getTargetFilename(self, descriptor):
         return self.target_path + "/" + descriptor.name + ".dots"
+
+    def processOptions(self, options):
+        default_options = self.default_options.copy()
+        for option in options:
+            option_value = options[option]
+
+            if option == "cached":
+                if not type(option_value) is bool:
+                    options[option] = str2bool(option_value)
+
+            # Remove from default_options-dict when option was set
+            if option in default_options:
+                del default_options[option]
+
+        # Set all default_options, that were not set before
+        for option in default_options:
+            options[option] = default_options[option]
+
+    def isExisting(self, fileName):
+        try:
+            ret = os.stat(fileName)
+            return True
+        except:
+            return False
+
+    def isFileEqual(self, left, right):
+        try:
+            if not self.isExisting(left):
+                return False
+            if not self.isExisting(right):
+                return False
+            ret = filecmp.cmp(left, right, shallow=False)
+            #eprint("Check ", left, right, ret)
+            return ret
+        except Exception as e:
+            eprint("Exception:", e)
+            return False
