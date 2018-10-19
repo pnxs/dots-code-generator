@@ -67,7 +67,7 @@ class DotsCodeGenerator:
     }
 
     def loadConfig(self, configFile):
-        if dcg.verbose:
+        if self.verbose:
             eprint("Load config from file %s" % configFile)
         config = __import__(configFile)
 
