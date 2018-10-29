@@ -27,6 +27,8 @@ def make_camel_case(source):
     #print("Result:", source)
     return source
 
+def make_snake_case_upper(source):
+    return re.sub("((?<=[a-z0-9])[A-Z]|(?!^)(?<!_)[A-Z](?=[a-z]))", r'_\1', source).upper()
 
 class DdlTemplate:
     def __init__(self, template_directory, output_file):
@@ -34,6 +36,7 @@ class DdlTemplate:
                                extensions=["jinja2.ext.do"])
         self.env.filters["expand_list"] = expand_list
         self.env.filters["camel_caselizer"] = make_camel_case
+        self.env.filters["SNAKE_CASELIZER"] = make_snake_case_upper
         self.env.lstrip_blocks = True
         self.env.trim_blocks =  True
         self.env.keep_trailing_newline = True
