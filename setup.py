@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-    name="dots-cg-pnxs",
+    name="dots-code-generator",
     version="0.0.2",
     author="Thomas Schaetzlein",
     author_email="pypi@thomas.pnxs.de",
