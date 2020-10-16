@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from simpleparse.parser import Parser
 from simpleparse.dispatchprocessor import *

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Dots Code Generator
@@ -250,9 +250,9 @@ if __name__ == "__main__":
 
     dcg = DotsCodeGenerator()
     configFile = None
-    if os.environ.has_key("DOTS_TEMPLATE_PATH"):
+    if "DOTS_TEMPLATE_PATH" in os.environ:
         dcg.templatePath = os.environ["DOTS_TEMPLATE_PATH"]
-    if os.environ.has_key("DCG_CONFIG_FILE"):
+    if "DCG_CONFIG_FILE" in os.environ:
         configFile = os.environ["DCG_CONFIG_FILE"]
     if options.templatePath is not None:
         dcg.templatePath = options.templatePath
