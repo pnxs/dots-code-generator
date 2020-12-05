@@ -5,15 +5,18 @@ Dots Code Generator
 """
 
 from __future__ import print_function
-from optparse import OptionParser
-from dots import DdlParser, DdlTemplate
-import os
 
 import sys
 import filecmp
 import functools
 import itertools
 import operator
+import os
+import pathlib
+
+from optparse import OptionParser
+sys.path.insert(1, os.path.join(pathlib.Path(__file__).parent.absolute(), '..'))
+from dots import DdlParser, DdlTemplate
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -69,6 +72,10 @@ class DotsCodeGenerator:
     def loadConfig(self, configFile):
         if self.verbose:
             eprint("Load config from file %s" % configFile)
+        config_file_path = pathlib.Path(configFile)
+        if config_file_path.exists():
+            sys.path.insert(1, str(config_file_path.parent))
+            configFile = config_file_path.stem
         config = __import__(configFile)
 
         if config:
