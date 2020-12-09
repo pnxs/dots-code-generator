@@ -40,7 +40,7 @@ class DdlTemplate:
         self.env.lstrip_blocks = True
         self.env.trim_blocks =  True
         self.env.keep_trailing_newline = True
-        if output_file is "-":
+        if output_file == "-":
             self.output_file = sys.stdout
         else:
             self.output_file = open(output_file, "w")
