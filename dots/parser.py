@@ -7,7 +7,7 @@ import copy
 
 ddlGrammar = r"""
 file            := wsn, content
-content         := directive+, wsn
+content         := directive*, wsn
 directive       := !, (struct / enum / import_file / comment), wsn
 import_file     := 'import', !, wsn, path
 struct          := multiline_comment?, wsn, 'struct', !, wsn, name, wsn, options?, '{', wsn, attribute*, '}', wsn
