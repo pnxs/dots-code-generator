@@ -73,7 +73,7 @@ class DDLProcessor(DispatchProcessor):
 
         # Imported names will not be changed
         if tn in self.imports:
-            return outputFormat % tn
+            return outputFormat.format(tn)
 
         if tn not in self.typeMapping:
             return outputFormat.format(tn)
