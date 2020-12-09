@@ -115,6 +115,8 @@ class DotsCodeGenerator:
 
     def isFileEqual(self, left, right):
         try:
+            if not os.path.exists(left) or not os.path.exists(right):
+                return False
             ret = filecmp.cmp(left, right, shallow=False)
             #eprint("Check ", left, right, ret)
             return ret
