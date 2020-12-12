@@ -244,7 +244,7 @@ class DotsCodeGenerator:
 
     
 if __name__ == "__main__":
-    usage = "usage: %prog [options] dots-files"
+    usage = "usage: %prog -C <config-file> [-D] [-T <template-path>] [-o <output-path>] [-v] [-M] <dots-files>"
     parser = OptionParser(usage=usage)
     parser.add_option("-C", "--config", dest="configFile")
     parser.add_option("-D", "--define", dest="define", action="append")
@@ -279,6 +279,9 @@ if __name__ == "__main__":
         dcg.defines = defines
     dcg.outputPath = options.outputPath
 
+    if configFile is None or len(configFile) == 0:
+        parser.error("No config file given.")
+    
     dcg.loadConfig(configFile)
 
     if dcg.verbose:
