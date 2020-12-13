@@ -135,13 +135,12 @@ class DotsCodeGenerator:
         absFileName = self.outputPath + "/" + fileName
         absTempFileName = absFileName + ".tmp"
 
-        if self.verbose:
-            eprint("    gen " + fileName)
         jinja = DdlTemplate(self.templatePath, absTempFileName)
         jinja.render(key, fs)
 
         # Check if tempFileName is different to fileName, only overwrite if different
         if not self.isFileEqual(absTempFileName, absFileName):
+            eprint("created " + fileName)
             os.rename(absTempFileName, absFileName)
         else:
             os.remove(absTempFileName)
