@@ -188,7 +188,7 @@ class DotsCodeGenerator:
         needToImport = set(s["imports"]) & set(structTypes)
         # Add missing imports for struct
         needToImport = needToImport | set(structTypes)
-        fs["imports"] = list(needToImport)
+        fs["imports"] = sorted(list(needToImport))
 
         outputNames = self.outputNames(struct["name"], self.struct_templates)
         
