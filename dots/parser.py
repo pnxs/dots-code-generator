@@ -21,6 +21,7 @@ type_mapping_1_1 = {
     "property_set": "property_set"
 }
 
+
 class DdlParser(object):
     def __init__(self):
         self.parser = Lark_StandAlone()

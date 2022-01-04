@@ -1,7 +1,6 @@
-#from lark import Transformer, v_args
 from . dots_parser import Transformer, v_args
-
 import copy
+
 
 class DotsTransformer(Transformer):
     def __init__(self, config):
@@ -17,20 +16,20 @@ class DotsTransformer(Transformer):
         self.p_vector_type = None
 
     def _mapped_type(self, attr):
-        outputFormat = "{}"
+        output_format = "{}"
         tn = attr["type"]
         if attr["vector"]:
-            outputFormat = self.vectorFormat
+            output_format = self.vectorFormat
             tn = attr["vector_type"]
 
         # Imported names will not be changed
         if tn in self.imports:
-            return outputFormat.format(tn)
+            return output_format.format(tn)
 
         if tn not in self.typeMapping:
-            return outputFormat.format(tn)
+            return output_format.format(tn)
             #raise Exception("Unknown type: '%s'" % tn)
-        return outputFormat.format(self.typeMapping[tn])
+        return output_format.format(self.typeMapping[tn])
 
     def transform(self, tree):
         tree = super(DotsTransformer, self).transform(tree)
@@ -54,29 +53,29 @@ class DotsTransformer(Transformer):
         return str(v)
 
     @v_args(inline=True)
-    def property(self, commentblock, tag, options, type, name, comment):
+    def property(self, doc_comment, tag, options, type_name, name, comment):
         is_key = False if not options else "key" in options
         is_vector = self.p_is_vector
         p = {
             "name": name,
             "Name": name[0].upper() + name[1:],
             "tag": int(tag),
-            "type": type,
+            "type": type_name,
             "key": is_key,
             "vector": is_vector
         }
         if options:
             p["options"] = options
-        if commentblock:
-            p["doc"] = commentblock
+        if doc_comment:
+            p["doc"] = doc_comment
         if comment:
             p["comment"] = comment
         if is_vector:
             p["vector_type"] = self.p_vector_type
-            vectorProperty = copy.copy(p)
-            vectorProperty["vector"] = False
-            vectorProperty["type"] = vectorProperty["vector_type"]
-            p["cxx_vector_type"] = self._mapped_type(vectorProperty)
+            vector_property = copy.copy(p)
+            vector_property["vector"] = False
+            vector_property["type"] = vector_property["vector_type"]
+            p["cxx_vector_type"] = self._mapped_type(vector_property)
         p["cxx_type"] = self._mapped_type(p)
 
         # Reset vector-members
@@ -92,51 +91,51 @@ class DotsTransformer(Transformer):
         return f"vector<{t}>"
 
     @v_args(inline=True)
-    def struct(self, comment_block, struct_name, options, properties):
-        keyProperties = []
+    def struct(self, doc_comment, struct_name, options, properties):
+        key_properties = []
         keys = []
 
         for p in properties:
             if p["key"]:
                 keys.append(p["name"])
-                keyProperties.append(p)
+                key_properties.append(p)
 
         s = {
             "name": struct_name,
             "options": options if options else {},
             "attributes": properties,
-            "keyAttributes": keyProperties,
+            "keyAttributes": key_properties,
             "keys": keys
         }
-        if comment_block:
-            s["structComment"] = comment_block
+        if doc_comment:
+            s["structComment"] = doc_comment
 
         self.structs.append(s)
         return s
 
     @v_args(inline=True)
-    def enum_item(self, comment_block, tag, enum_name, enum_value, comment):
+    def enum_item(self, doc_comment, tag, enum_name, enum_value, comment):
         ei = {
             "tag": int(tag),
             "name": enum_name,
             "Name": enum_name[0].upper() + enum_name[1:],
             "value": enum_value if enum_value else int(tag)-1
         }
-        if comment_block:
-            ei["doc"] = comment_block
+        if doc_comment:
+            ei["doc"] = doc_comment
         if comment:
             ei["comment"] = comment
         return ei
 
     @v_args(inline=True)
-    def enum(self, comment_block, name, enum_items):
+    def enum(self, doc_comment, name, enum_items):
         e = {
             "name": name,
             "Name": name[0].upper() + name[1:],
             "items": enum_items
         }
-        if comment_block:
-            e["doc"] = comment_block
+        if doc_comment:
+            e["doc"] = doc_comment
         self.enums.append(e)
         return e
 
