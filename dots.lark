@@ -1,0 +1,45 @@
+?start: (struct | enum | import)*
+
+struct: [doc_comments] "struct" struct_name [options] struct_properties
+enum: [doc_comments] "enum" enum_name enum_items
+import: "import" CNAME -> import_
+
+enum_items: "{" enum_item+ "}"
+
+property: [doc_comments] TAG ":" [options] type PROPERTY_NAME ";" [doc_comment]
+
+struct_properties: "{" property+ "}"
+
+?struct_name: CNAME
+comment: CPP_COMMENT
+option: CNAME ["=" option_value]
+string : ESCAPED_STRING
+?option_value: string
+          | "true"i -> true
+          | "false"i -> false
+
+options: "[" [option ("," option)*] "]"
+
+type: CNAME | vector_type
+vector_type: "vector" "<" type ">"
+
+enum_item: [doc_comment] TAG ":" CNAME ["=" INT] ","? [doc_comment]
+
+?enum_name: CNAME
+
+doc_comment: /\/\/\/\s*[^\n]+/ | /\/\/<\s*[^\n]+/
+doc_comments: doc_comment+
+
+TAG: INT
+PROPERTY_NAME: CNAME
+COMMENT: CPP_COMMENT
+
+%import common.NEWLINE
+%import common.CNAME
+%import common.CPP_COMMENT
+%import common.ESCAPED_STRING
+%import common.INT
+%import common.WS
+
+%ignore WS
+%ignore COMMENT

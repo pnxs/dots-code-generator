@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from simpleparse.parser import Parser
-from simpleparse.dispatchprocessor import *
+from . dots_parser import Lark_StandAlone, Transformer, v_args
+from . DotsTransformer import DotsTransformer
+
 import copy
-#import pprint
 
 ddlGrammar = r"""
 file            := wsn, content
@@ -56,7 +56,7 @@ type_mapping_1_1 = {
     "property_set": "property_set"
 }
 
-class DDLProcessor(DispatchProcessor):
+class DDLProcessor():
     def __init__(self, config):
         self.imports = []
         self.structs = []
@@ -247,14 +247,14 @@ class DDLProcessor(DispatchProcessor):
 
 class DdlParser(object):
     def __init__(self):
-        self.scanner = Parser(ddlGrammar, 'file')
+        self.parser = Lark_StandAlone()
+
         self.ddlconfig = {
             "vector_format": "dots::Vector<%s>",
             "type_mapping": type_mapping_1_1
         }
 
     def parse(self, data):
-        success, structs, next_char = self.scanner.parse(data, processor=DDLProcessor(self.ddlconfig))
-        if not success:
-            raise Exception("Parsing error")
-        return structs[0]
+        tree = self.parser.parse(data)
+        tree = DotsTransformer(self.ddlconfig).transform(tree)
+        return tree
