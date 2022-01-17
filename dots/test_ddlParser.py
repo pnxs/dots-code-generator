@@ -1,9 +1,10 @@
 from unittest import TestCase
 from dots.parser import DdlParser
 
+
 class TestDdlParser(TestCase):
     def test_parse(self):
-        testData1 = """
+        test_data1 = """
         //a file comment
         import SharedMemStatus
         import SharedMemObjectReference
@@ -23,7 +24,7 @@ class TestDdlParser(TestCase):
 
         parser = DdlParser()
 
-        s = parser.parse(testData1)
+        s = parser.parse(test_data1)
 
         self.assertEqual(s["imports"], ['SharedMemStatus', 'SharedMemObjectReference'])
         self.assertEqual(len(s["enums"]), 0)

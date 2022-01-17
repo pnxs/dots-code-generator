@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dots-code-generator",
-    version="0.0.4",
+    version="0.1.0",
     author="Thomas Schaetzlein",
     author_email="pypi@thomas.pnxs.de",
     description="DOTS code generator",
@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/pnxs/dots-code-generator",
     packages=setuptools.find_packages(),
-    install_requires=['simpleparse', 'jinja2'],
+    install_requires=['jinja2'],
     scripts=[
         'bin/dcg.py'
     ],
@@ -25,5 +25,5 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )

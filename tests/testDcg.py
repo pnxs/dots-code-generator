@@ -7,14 +7,14 @@ testData1 = """
 import SharedMemStatus
 import SharedMemObjectReference
 
-// Describes an instance of a shared memory object
+/// Describes an instance of a shared memory object
 struct SharedMemObject 
 {
     1: [key] string node;
     2: [key] string id;
     3: uint32 size;
     4: SharedMemStatus status;
-    5: SharedMemObjectReference replicationSrc; // reference to origin, only set when object was replicated
+    5: SharedMemObjectReference replicationSrc; /// reference to origin, only set when object was replicated
     6: bool partialReplication; 
 }
 
@@ -50,7 +50,7 @@ enum SpMsgType {
     4: kill,
     5: groups,
     6: membership,
-    7: transition // transition membership message
+    7: transition /// transition membership message
 }
 
 """

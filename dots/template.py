@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-
 from jinja2 import Environment, FileSystemLoader
 import sys
 import re
+
 
 def expand_list(seq, format_string, beg="", mid="", end=""):
     if len(seq) == 0:
@@ -15,8 +14,9 @@ def expand_list(seq, format_string, beg="", mid="", end=""):
     ret += end
     return ret
 
+
 def make_camel_case(source):
-    #print("Source:", source)
+    # print("Source:", source)
     regex = re.compile("[^_]_[A-Za-z0-9]")
     while True:
         m = regex.search(source)
@@ -24,11 +24,13 @@ def make_camel_case(source):
             source = source[: m.start()+1] + source[m.end()-1].upper() + source[m.end():]
         else:
             break
-    #print("Result:", source)
+    # print("Result:", source)
     return source
+
 
 def make_snake_case_upper(source):
     return re.sub("((?<=[a-z0-9])[A-Z]|(?!^)(?<!_)[A-Z](?=[a-z]))", r'_\1', source).upper()
+
 
 class DdlTemplate:
     def __init__(self, template_directory, output_file):
@@ -38,7 +40,7 @@ class DdlTemplate:
         self.env.filters["camel_caselizer"] = make_camel_case
         self.env.filters["SNAKE_CASELIZER"] = make_snake_case_upper
         self.env.lstrip_blocks = True
-        self.env.trim_blocks =  True
+        self.env.trim_blocks = True
         self.env.keep_trailing_newline = True
         if output_file == "-":
             self.output_file = sys.stdout

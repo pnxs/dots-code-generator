@@ -141,7 +141,7 @@ class DotsCodeGenerator:
         # Check if tempFileName is different to fileName, only overwrite if different
         if not self.isFileEqual(absTempFileName, absFileName):
             eprint("created " + fileName)
-            os.rename(absTempFileName, absFileName)
+            os.replace(absTempFileName, absFileName)
         else:
             os.remove(absTempFileName)
 
