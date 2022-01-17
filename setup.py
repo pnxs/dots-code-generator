@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dots-code-generator",
-    version="0.0.4",
+    version="0.1.0",
     author="Thomas Schaetzlein",
     author_email="pypi@thomas.pnxs.de",
     description="DOTS code generator",
