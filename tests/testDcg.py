@@ -7,6 +7,8 @@ testData1 = """
 import SharedMemStatus
 import SharedMemObjectReference
 
+package my.test.package
+
 /// Describes an instance of a shared memory object
 struct SharedMemObject 
 {
@@ -20,7 +22,7 @@ struct SharedMemObject
 
 """
 
-resultData1 = {'imports': ['SharedMemStatus', 'SharedMemObjectReference'], 'enums': [], 'structs': [
+resultData1 = {'imports': ['SharedMemStatus', 'SharedMemObjectReference'],'package': 'my.test.package', 'enums': [], 'structs': [
     {'name': 'SharedMemObject', 'keys': ['node', 'id'],
      'structComment': ['Describes an instance of a shared memory object'], 'attributes': [
         {'cxx_type': 'string', 'name': 'node', 'tag': 1, 'vector': False, 'key': True, 'type': 'string',
@@ -71,7 +73,8 @@ resultData2 = {
         'name': 'SpMsgType'
     }],
     'imports': [],
-    'structs': []
+    'structs': [],
+    'package': None
 }
 
 #################################################################
@@ -94,6 +97,7 @@ resultData3 = {
     'imports': [
         'SharedMemStatus', 'SharedMemObjectReference'
     ],
+    'package': None,
     'enums': [],
     'structs': [
         {'name': 'SharedMemObject', 'keys': ['node', 'id'], 'attributes': [

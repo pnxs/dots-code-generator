@@ -22,3 +22,9 @@ type_mapping     = {
     "property_set": "property_set"
 }
 
+import re
+
+def snake_caselizer(value):
+    return re.sub("(?<!^)(?=[A-Z])", "_", value).lower()
+
+filters = {"snake_caselizer": snake_caselizer }

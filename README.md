@@ -16,4 +16,4 @@ Generated files will be places in directory "out".
 DOTS grammer is defined in "dots.lark". If the grammar is updated, a new
 parser has to be generated with the "lark" python module:
 
-python -m lark.tools.standalone dots.lark > dots/dots_parser.py
+python -m lark.tools.standalone dots.lark --maybe_placeholders -o dots/dots_parser.py

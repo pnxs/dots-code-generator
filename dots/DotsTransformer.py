@@ -4,9 +4,10 @@ import copy
 
 class DotsTransformer(Transformer):
     def __init__(self, config):
-        super(DotsTransformer, self).__init__()
+        super(Transformer, self).__init__()
         self.structs = []
         self.imports = []
+        self.package_ = None
         self.enums = []
         self.mapped_types = {}
         self.vectorFormat = config["vector_format"]
@@ -36,7 +37,8 @@ class DotsTransformer(Transformer):
         return {
             'enums': self.enums,
             'structs': self.structs,
-            'imports': self.imports
+            'imports': self.imports,
+            'package': self.package_
         }
 
     @v_args(inline=True)
@@ -141,6 +143,9 @@ class DotsTransformer(Transformer):
 
     def import_(self, v):
         self.imports.append(str(v[0]))
+
+    def package(self, v):
+        self.package_ = str(v[0])
 
     PROPERTY_NAME = str
     CNAME = str

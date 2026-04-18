@@ -33,12 +33,14 @@ def make_snake_case_upper(source):
 
 
 class DdlTemplate:
-    def __init__(self, template_directory, output_file):
+    def __init__(self, template_directory, output_file, custom_filters):
         self.env = Environment(loader=FileSystemLoader(template_directory),
                                extensions=["jinja2.ext.do"])
         self.env.filters["expand_list"] = expand_list
         self.env.filters["camel_caselizer"] = make_camel_case
         self.env.filters["SNAKE_CASELIZER"] = make_snake_case_upper
+        for key, value in custom_filters.items():
+            self.env.filters[key] = value
         self.env.lstrip_blocks = True
         self.env.trim_blocks = True
         self.env.keep_trailing_newline = True

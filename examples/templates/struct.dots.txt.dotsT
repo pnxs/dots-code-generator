@@ -1,12 +1,13 @@
-This is an generated text documentation of DOTS types
+This is a generated text documentation of DOTS types
 
 Typename: {{name}}
 
 Namespace: {{defines["NAMESPACE"]}}
+Package: {{package}}
 
 Fields:
 {% for attr in attributes %}
-{{attr.cxx_type}} {{attr.name}}
+{{attr.cxx_type}} {{attr.name | snake_caselizer}}
 {% endfor %}
 
 Includes:

@@ -6,11 +6,9 @@ Dots Code Generator
 
 from __future__ import print_function
 
+import importlib
 import sys
 import filecmp
-import functools
-import itertools
-import operator
 import os
 import pathlib
 
@@ -37,11 +35,11 @@ class ParsingError(Exception):
 class NonUniqueTagError(ParsingError):
     """Exception raised when a struct has non-unique tags"""
     
-    def __init__(self, typeName, tagId, propertyName, previousPropertyName):
-        self.typeName = typeName
-        self.tag = tagId
-        self.propertyName = propertyName
-        self.previousPropertyName = previousPropertyName
+    def __init__(self, type_name, tag_id, property_name, previous_property_name):
+        self.typeName = type_name
+        self.tag = tag_id
+        self.propertyName = property_name
+        self.previousPropertyName = previous_property_name
 
     def __str__(self):
         return "ERROR in Type %s: Tag '%d' from property '%s' was previously used in property '%s'." % (self.typeName, self.tag, self.propertyName, self.previousPropertyName)
@@ -49,8 +47,8 @@ class NonUniqueTagError(ParsingError):
 
 class DotsCodeGenerator:
     configFile           = None
-    templatePath         = "."
-    outputPath           = "."
+    template_path         = "."
+    output_path           = "."
     verbose              = False
     list_generated       = False
     defines              = {}
@@ -59,6 +57,7 @@ class DotsCodeGenerator:
     enum_templates       = []
     type_mapping         = {}
     vector_format        = ""
+    custom_filters       = {}
 
     default_options      = {
         "cached": True,
@@ -69,41 +68,45 @@ class DotsCodeGenerator:
         "substruct_only": False
     }
 
-    def loadConfig(self, configFile):
-        if self.verbose:
-            eprint("Load config from file %s" % configFile)
-        config_file_path = pathlib.Path(configFile)
+    def load_config(self, config_file):
+        config_file_path = pathlib.Path(config_file)
         if config_file_path.exists():
             sys.path.insert(1, str(config_file_path.parent))
-            configFile = config_file_path.stem
-        config = __import__(configFile)
+            config_file = config_file_path.stem
+        if self.verbose:
+            print("Load config from file %s / %s %d" % (config_file_path, config_file, config_file_path.exists()))
+        config = importlib.import_module(config_file)
 
         if config:
             self.struct_templates = config.struct_templates
             self.enum_templates = config.enum_templates
             self.type_mapping = config.type_mapping
             self.vector_format = config.vector_format
+            if 'filters' in dir(config):
+                self.custom_filters = config.filters
     
 
-    def outputNames(self, name, templateList):
-        outNames = {}
+    @staticmethod
+    def output_names(name, template_list):
+        out_names = {}
         tn = name
-        for template in templateList:
+        for template in template_list:
             # Strip .dotsT
-            origTemplateName = template
+            orig_template_name = template
             if template.endswith(".dotsT"):
                 template = template[:-6]
             # Strip <template-name>
-            templateExt = template[template.find("."):]
-            outNames[origTemplateName] = "%s%s" % (tn, templateExt)
-        return outNames
+            template_ext = template[template.find("."):]
+            out_names[orig_template_name] = "%s%s" % (tn, template_ext)
+        return out_names
 
-    def printOutputNames(self, outputNames):
-        for key in outputNames:
-            on = outputNames[key]
+    @staticmethod
+    def print_output_names(output_names):
+        for key in output_names:
+            on = output_names[key]
             print(on)
 
-    def processOptions(self, options):
+    def process_options(self, options):
         default_options = self.default_options.copy()
         for option in options:
             option_value = options[option]
@@ -120,7 +123,8 @@ class DotsCodeGenerator:
         for option in default_options:
             options[option] = default_options[option]
 
-    def isFileEqual(self, left, right):
+    @staticmethod
+    def is_file_equal(left, right):
         try:
             if not os.path.exists(left) or not os.path.exists(right):
                 return False
@@ -131,76 +135,77 @@ class DotsCodeGenerator:
             eprint("Exception:", e)
             return False
 
-    def generateFile(self, fileName, key, fs):
-        absFileName = self.outputPath + "/" + fileName
-        absTempFileName = absFileName + ".tmp"
+    def generate_file(self, file_name, key, fs):
+        abs_file_name = self.output_path + "/" + file_name
+        abs_temp_file_name = abs_file_name + ".tmp"
 
-        jinja = DdlTemplate(self.templatePath, absTempFileName)
+        jinja = DdlTemplate(self.template_path, abs_temp_file_name, self.custom_filters)
         jinja.render(key, fs)
 
         # Check if tempFileName is different to fileName, only overwrite if different
-        if not self.isFileEqual(absTempFileName, absFileName):
-            eprint("created " + fileName)
-            os.replace(absTempFileName, absFileName)
+        if not self.is_file_equal(abs_temp_file_name, abs_file_name):
+            eprint("created " + file_name)
+            os.replace(abs_temp_file_name, abs_file_name)
         else:
-            os.remove(absTempFileName)
+            os.remove(abs_temp_file_name)
 
 
-    def generateEnum(self, enum, s):
+    def generate_enum(self, enum, s):
         fs = enum
         fs["imports"] = s["imports"]
         fs["includes"] = []
         fs["defines"] = self.defines
+        fs["package"] = s["package"]
 
-        outputNames = self.outputNames(enum["name"], self.enum_templates)
+        output_names = self.output_names(enum["name"], self.enum_templates)
 
         if self.list_generated:
-            self.printOutputNames(outputNames)
+            self.print_output_names(output_names)
             return
         
         if self.verbose:
             eprint("  Enum %s" % enum["name"])
         
-        for key in outputNames:
-            self.generateFile(outputNames[key], key, fs)
+        for key in output_names:
+            self.generate_file(output_names[key], key, fs)
     
-    def generateStruct(self, struct, s):
+    def generate_struct(self, struct, s):
         fs = struct
         fs["includes"] = []
         fs["defines"] = self.defines
+        fs["package"] = s["package"]
 
-        self.processOptions(fs["options"])
+        self.process_options(fs["options"])
 
         
         # Build list of self defined struct types
-        structTypes = []
+        struct_types = []
         for attr in struct["attributes"]:
-            t = None
             if attr["vector"]:
                 t = attr["vector_type"]
             else:
                 t = attr["type"]
 
             if t not in self.type_mapping:
-                structTypes.append(t)
+                struct_types.append(t)
 
         # Filter any imports, that are not needed by this struct
-        needToImport = set(s["imports"]) & set(structTypes)
+        need_to_import = set(s["imports"]) & set(struct_types)
         # Add missing imports for struct
-        needToImport = needToImport | set(structTypes)
-        fs["imports"] = sorted(list(needToImport))
+        need_to_import = need_to_import | set(struct_types)
+        fs["imports"] = sorted(list(need_to_import))
 
-        outputNames = self.outputNames(struct["name"], self.struct_templates)
+        output_names = self.output_names(struct["name"], self.struct_templates)
         
         if self.list_generated:
-            self.printOutputNames(outputNames)
+            self.print_output_names(output_names)
             return
     
         if self.verbose:
             eprint("  Struct %s" % struct["name"])
 
-        for key in outputNames:
-            self.generateFile(outputNames[key], key, fs)
+        for key in output_names:
+            self.generate_file(output_names[key], key, fs)
 
 
     def check_struct_unique_tags(self, struct):
@@ -219,14 +224,13 @@ class DotsCodeGenerator:
     def check_consistency_struct(self, struct):
         self.check_struct_unique_tags(struct)
 
-    def processFile(self, fileName):
+    def process_file(self, file_name):
         if self.verbose:
-            eprint("Process file " + fileName)
-        fd = open(fileName, "r")
+            eprint("Process file " + file_name)
+        fd = open(file_name, "r")
 
-        outputPath = self.outputPath
-
-        bn = os.path.basename(fileName)
+        #output_path = self.output_path
+        #bn = os.path.basename(file_name)
 
         gen = DdlParser()
         gen.ddlconfig["vector_format"] = self.vector_format
@@ -235,21 +239,21 @@ class DotsCodeGenerator:
 
         for enum in s["enums"]:
             self.check_consistency_enum(enum)
-            self.generateEnum(enum, s)
+            self.generate_enum(enum, s)
 
         for struct in s["structs"]:
             self.check_consistency_struct(struct)
-            self.generateStruct(struct, s)
+            self.generate_struct(struct, s)
 
     
 if __name__ == "__main__":
     usage = "usage: %prog -C <config-file> [-D] [-T <template-path>] [-o <output-path>] [-v] [-M] <dots-files>"
     parser = OptionParser(usage=usage)
-    parser.add_option("-C", "--config", dest="configFile")
+    parser.add_option("-C", "--config", dest="config_file")
     parser.add_option("-D", "--define", dest="define", action="append")
-    parser.add_option("-T", "--templatePath", dest="templatePath",
+    parser.add_option("-T", "--templatePath", dest="template_path",
                     help="path to directory with template-files")
-    parser.add_option("-o", "--outputPath", dest="outputPath", default=".",
+    parser.add_option("-o", "--outputPath", dest="output_path", default=".",
                     help="path of output files")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
     parser.add_option("-M", "--list-generated", dest="list_generated", action="store_true", default=False, help="list generated output files")
@@ -259,13 +263,13 @@ if __name__ == "__main__":
     dcg = DotsCodeGenerator()
     configFile = None
     if "DOTS_TEMPLATE_PATH" in os.environ:
-        dcg.templatePath = os.environ["DOTS_TEMPLATE_PATH"]
+        dcg.template_path = os.environ["DOTS_TEMPLATE_PATH"]
     if "DCG_CONFIG_FILE" in os.environ:
         configFile = os.environ["DCG_CONFIG_FILE"]
-    if options.templatePath is not None:
-        dcg.templatePath = options.templatePath
-    if options.configFile:
-        configFile = options.configFile
+    if options.template_path is not None:
+        dcg.template_path = options.template_path
+    if options.config_file:
+        configFile = options.config_file
     if options.list_generated:
         dcg.list_generated = options.list_generated
     if options.verbose:
@@ -276,23 +280,21 @@ if __name__ == "__main__":
             define, value = define.split("=", 1)
             defines[define] = value
         dcg.defines = defines
-    dcg.outputPath = options.outputPath
+    dcg.output_path = options.output_path
 
     if configFile is None or len(configFile) == 0:
         parser.error("No config file given.")
     
-    dcg.loadConfig(configFile)
+    dcg.load_config(configFile)
 
     if dcg.verbose:
-        eprint("Templatepath: '%s'" % options.templatePath)
+        eprint("Templatepath: '%s'" % options.template_path)
         eprint("Output generated:", options.list_generated)
 
     try:
         for file in args:
-            dcg.processFile(file)
+            dcg.process_file(file)
 
     except NonUniqueTagError as e:
         print(e)
         sys.exit(1)
-    
-        

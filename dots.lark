@@ -1,8 +1,9 @@
-?start: (struct | enum | import)*
+?start: (struct | enum | import | package)*
 
 struct: [doc_comments] "struct" struct_name [options] struct_properties
 enum: [doc_comments] "enum" enum_name enum_items
 import: "import" CNAME -> import_
+package: "package" PACKAGE_NAME -> package
 
 enum_items: "{" enum_item+ "}"
 
@@ -33,9 +34,12 @@ doc_comments: doc_comment+
 TAG: INT
 PROPERTY_NAME: CNAME
 COMMENT: CPP_COMMENT
+PACKAGE_NAME: ("_"|LETTER) ("."|"_"|LETTER|DIGIT)*
 
 %import common.NEWLINE
 %import common.CNAME
+%import common.LETTER
+%import common.DIGIT
 %import common.CPP_COMMENT
 %import common.ESCAPED_STRING
 %import common.INT
