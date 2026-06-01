@@ -135,7 +135,33 @@ class TestDotsParser(unittest.TestCase):
         gen.ddlconfig["vector_format"] = "list"
         s = gen.parse(testData3)
         self.assertEqual(resultData3, s)
-        
+
+    def test_parsing_any(self):
+        # `any` is not a grammar keyword: like every primitive it is an ordinary
+        # type name resolved through the target's type_mapping. A target that
+        # maps "any" (e.g. the C++ target maps it to "any_t") gets it for free,
+        # including inside vector<...>.
+        gen = DdlParser()
+        gen.ddlconfig["vector_format"] = "vector_t<{}>"
+        gen.ddlconfig["type_mapping"] = {"uint32": "uint32_t", "any": "any_t"}
+        s = gen.parse("""
+struct AnyEnvelope {
+    1: [key] uint32 id;
+    2: any payload;
+    3: vector<any> payloads;
+}
+""")
+        attrs = {a["name"]: a for a in s["structs"][0]["attributes"]}
+
+        self.assertEqual(attrs["payload"]["type"], "any")
+        self.assertFalse(attrs["payload"]["vector"])
+        self.assertEqual(attrs["payload"]["cxx_type"], "any_t")
+
+        self.assertTrue(attrs["payloads"]["vector"])
+        self.assertEqual(attrs["payloads"]["vector_type"], "any")
+        self.assertEqual(attrs["payloads"]["cxx_type"], "vector_t<any_t>")
+        self.assertEqual(attrs["payloads"]["cxx_vector_type"], "any_t")
+
 
 if __name__ == '__main__':
     unittest.main()
