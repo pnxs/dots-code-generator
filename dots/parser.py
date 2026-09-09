@@ -18,7 +18,8 @@ type_mapping_1_1 = {
     "time_point": "time_point",
     "steady_timepoint": "steady_timepoint",
     "string": "string",
-    "property_set": "property_set"
+    "property_set": "property_set",
+    "instance_ref": "instance_ref"
 }
 
 
@@ -27,7 +28,8 @@ class DdlParser(object):
         self.parser = Lark_StandAlone()
 
         self.ddlconfig = {
-            "vector_format": "dots::Vector<%s>",
+            "vector_format": "dots::Vector<{}>",
+            "instance_ref_format": "instance_ref<{}>",
             "type_mapping": type_mapping_1_1
         }
 

@@ -57,6 +57,7 @@ class DotsCodeGenerator:
     enum_templates       = []
     type_mapping         = {}
     vector_format        = ""
+    instance_ref_format  = "instance_ref<{}>"
     custom_filters       = {}
 
     default_options      = {
@@ -82,6 +83,7 @@ class DotsCodeGenerator:
             self.enum_templates = config.enum_templates
             self.type_mapping = config.type_mapping
             self.vector_format = config.vector_format
+            self.instance_ref_format = getattr(config, "instance_ref_format", "instance_ref<{}>")
             if 'filters' in dir(config):
                 self.custom_filters = config.filters
     
@@ -181,10 +183,16 @@ class DotsCodeGenerator:
         # Build list of self defined struct types
         struct_types = []
         for attr in struct["attributes"]:
-            if attr["vector"]:
-                t = attr["vector_type"]
-            else:
-                t = attr["type"]
+            t = attr["type"]
+            while t.startswith("vector<"):
+                t = t[7:-1]
+            if t.startswith("instance_ref<"):
+                target = t[13:-1]
+                if target != struct["name"]:
+                    struct_types.append(target)
+                continue
+            if t == "instance_ref":
+                continue
 
             if t not in self.type_mapping:
                 struct_types.append(t)
@@ -227,15 +235,16 @@ class DotsCodeGenerator:
     def process_file(self, file_name):
         if self.verbose:
             eprint("Process file " + file_name)
-        fd = open(file_name, "r")
 
         #output_path = self.output_path
         #bn = os.path.basename(file_name)
 
         gen = DdlParser()
         gen.ddlconfig["vector_format"] = self.vector_format
+        gen.ddlconfig["instance_ref_format"] = self.instance_ref_format
         gen.ddlconfig["type_mapping"] = self.type_mapping
-        s = gen.parse(fd.read())
+        with open(file_name, "r") as fd:
+            s = gen.parse(fd.read())
 
         for enum in s["enums"]:
             self.check_consistency_enum(enum)

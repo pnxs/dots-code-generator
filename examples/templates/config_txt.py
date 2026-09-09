@@ -1,6 +1,6 @@
 struct_templates = ["struct.dots.txt.dotsT"]
 enum_templates   = ["enum.dots.txt.dotsT"]
-vector_format    = "vector<%s>"
+vector_format    = "vector<{}>"
 
 type_mapping     = {
     "bool": "bool",

@@ -21,8 +21,9 @@ string : ESCAPED_STRING
 
 options: "[" [option ("," option)*] "]"
 
-type: CNAME | vector_type
+type: CNAME | vector_type | instance_ref_type
 vector_type: "vector" "<" type ">"
+instance_ref_type: "instance_ref" ["<" CNAME ">"]
 
 enum_item: [doc_comment] TAG ":" CNAME ["=" INT] ","? [doc_comment]
 

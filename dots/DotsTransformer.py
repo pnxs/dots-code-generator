@@ -1,5 +1,4 @@
 from . dots_parser import Transformer, v_args
-import copy
 
 
 class DotsTransformer(Transformer):
@@ -11,29 +10,35 @@ class DotsTransformer(Transformer):
         self.enums = []
         self.mapped_types = {}
         self.vectorFormat = config["vector_format"]
+        self.instanceRefFormat = config.get("instance_ref_format", "instance_ref<{}>")
         self.typeMapping = config["type_mapping"]
 
-        self.p_is_vector = False
-        self.p_vector_type = None
-
-    def _mapped_type(self, attr):
-        output_format = "{}"
-        tn = attr["type"]
-        if attr["vector"]:
-            output_format = self.vectorFormat
-            tn = attr["vector_type"]
-
+    def _mapped_type(self, tn):
+        if tn.startswith("vector<"):
+            return self.vectorFormat.format(self._mapped_type(tn[7:-1]))
+        if tn.startswith("instance_ref<"):
+            return self.instanceRefFormat.format(tn[13:-1])
         # Imported names will not be changed
         if tn in self.imports:
-            return output_format.format(tn)
-
-        if tn not in self.typeMapping:
-            return output_format.format(tn)
-            #raise Exception("Unknown type: '%s'" % tn)
-        return output_format.format(self.typeMapping[tn])
+            return tn
+        return self.typeMapping.get(tn, tn)
 
     def transform(self, tree):
         tree = super(DotsTransformer, self).transform(tree)
+        # Imported/externally defined names are resolved by the target compiler.
+        # Check locally known targets after visiting all declarations so forward
+        # references work as well as references to earlier declarations.
+        from .parser import type_mapping_1_1
+        non_struct_types = set(type_mapping_1_1) | {
+            "any", "bytes", "uuid", "timepoint", "float16", "vector"
+        } | {enum["name"] for enum in self.enums}
+        for struct in self.structs:
+            for attr in struct["attributes"]:
+                tn = attr["type"]
+                while tn.startswith("vector<"):
+                    tn = tn[7:-1]
+                if tn.startswith("instance_ref<") and tn[13:-1] in non_struct_types:
+                    raise ValueError("instance_ref target must be a struct type: " + tn[13:-1])
         return {
             'enums': self.enums,
             'structs': self.structs,
@@ -57,7 +62,7 @@ class DotsTransformer(Transformer):
     @v_args(inline=True)
     def property(self, doc_comment, tag, options, type_name, name, comment):
         is_key = False if not options else "key" in options
-        is_vector = self.p_is_vector
+        is_vector = type_name.startswith("vector<")
         p = {
             "name": name,
             "Name": name[0].upper() + name[1:],
@@ -73,24 +78,19 @@ class DotsTransformer(Transformer):
         if comment:
             p["comment"] = comment
         if is_vector:
-            p["vector_type"] = self.p_vector_type
-            vector_property = copy.copy(p)
-            vector_property["vector"] = False
-            vector_property["type"] = vector_property["vector_type"]
-            p["cxx_vector_type"] = self._mapped_type(vector_property)
-        p["cxx_type"] = self._mapped_type(p)
-
-        # Reset vector-members
-        self.p_is_vector = False
-        self.p_vector_type = None
+            p["vector_type"] = type_name[7:-1]
+            p["cxx_vector_type"] = self._mapped_type(p["vector_type"])
+        p["cxx_type"] = self._mapped_type(type_name)
 
         return p
 
     @v_args(inline=True)
     def vector_type(self, t):
-        self.p_is_vector = True
-        self.p_vector_type = t
         return f"vector<{t}>"
+
+    @v_args(inline=True)
+    def instance_ref_type(self, target):
+        return "instance_ref" if target is None else f"instance_ref<{target}>"
 
     @v_args(inline=True)
     def struct(self, doc_comment, struct_name, options, properties):
